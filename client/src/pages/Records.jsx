@@ -12,16 +12,24 @@ import {
   Trash2, 
   CheckCircle 
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const RecordCard = ({ record, onDelete }) => (
-  <div className="glass-panel" style={{ 
-    padding: '20px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '20px',
-    transition: 'var(--transition-smooth)',
-    cursor: 'pointer'
-  }}>
+const RecordCard = ({ record, onDelete, index }) => (
+  <motion.div 
+    className="glass-panel" 
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: index * 0.1 }}
+    whileHover={{ x: 10, borderColor: 'var(--primary-mint)' }}
+    style={{ 
+      padding: '20px', 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '20px',
+      transition: 'var(--transition-smooth)',
+      cursor: 'pointer'
+    }}
+  >
     <div style={{ 
       width: '50px', 
       height: '50px', 
@@ -69,7 +77,7 @@ const RecordCard = ({ record, onDelete }) => (
         <Trash2 size={18} />
       </button>
     </div>
-  </div>
+  </motion.div>
 );
 
 const Records = () => {
@@ -148,68 +156,87 @@ const Records = () => {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {records.filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
-          records
-            .filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()))
-            .map(record => (
-              <RecordCard key={record._id} record={record} onDelete={handleDelete} />
-            ))
-        ) : (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '100px', 
-            border: '1px dashed var(--border-glass)', 
-            borderRadius: '16px',
-            color: 'var(--text-muted)'
-          }}>
-            No encrypted records found matching your search.
-          </div>
-        )}
+        <AnimatePresence mode="popLayout">
+          {records.filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+            records
+              .filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()))
+              .map((record, index) => (
+                <RecordCard key={record._id} record={record} onDelete={handleDelete} index={index} />
+              ))
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{ 
+                textAlign: 'center', 
+                padding: '100px', 
+                border: '1px dashed var(--border-glass)', 
+                borderRadius: '16px',
+                color: 'var(--text-muted)'
+              }}
+            >
+              No encrypted records found matching your search.
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Add Record Modal Placeholder */}
-      {showAddModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div className="glass-panel" style={{ padding: '40px', width: '90%', maxWidth: '500px' }}>
-            <h2 style={{ marginBottom: '24px' }}>Initialize New Record</h2>
-            <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} onSubmit={async (e) => {
-              e.preventDefault();
-              const fData = new FormData(e.target);
-              const payload = {
-                patientId: user._id,
-                title: fData.get('title'),
-                category: fData.get('category'),
-                doctorName: fData.get('doctor'),
-              };
-              try {
-                await axios.post('http://localhost:5000/api/records', payload);
-                setShowAddModal(false);
-                fetchRecords();
-              } catch (err) { alert('Upload failed'); }
-            }}>
-              <input name="title" placeholder="Record Title (e.g. Lab Panel X)" required style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', padding: '12px', borderRadius: '8px', color: 'white' }} />
-              <select name="category" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', padding: '12px', borderRadius: '8px', color: 'white' }}>
-                <option value="Lab Report">Lab Report</option>
-                <option value="Prescription">Prescription</option>
-                <option value="Imaging">Imaging</option>
-              </select>
-              <input name="doctor" placeholder="Lead Medical Specialist" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', padding: '12px', borderRadius: '8px', color: 'white' }} />
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button type="submit" className="btn-primary" style={{ flex: 1 }}>Deploy Record</button>
-                <button type="button" onClick={() => setShowAddModal(false)} className="btn-ghost" style={{ flex: 1 }}>Abort</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showAddModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.8)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <motion.div 
+              className="glass-panel" 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              style={{ padding: '40px', width: '90%', maxWidth: '500px' }}
+            >
+              <h2 style={{ marginBottom: '24px' }}>Initialize New Record</h2>
+              <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} onSubmit={async (e) => {
+                e.preventDefault();
+                const fData = new FormData(e.target);
+                const payload = {
+                  patientId: user._id,
+                  title: fData.get('title'),
+                  category: fData.get('category'),
+                  doctorName: fData.get('doctor'),
+                };
+                try {
+                  await axios.post('http://localhost:5000/api/records', payload);
+                  setShowAddModal(false);
+                  fetchRecords();
+                } catch (err) { alert('Upload failed'); }
+              }}>
+                <input name="title" placeholder="Record Title (e.g. Lab Panel X)" required style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', padding: '12px', borderRadius: '8px', color: 'white' }} />
+                <select name="category" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', padding: '12px', borderRadius: '8px', color: 'white' }}>
+                  <option value="Lab Report">Lab Report</option>
+                  <option value="Prescription">Prescription</option>
+                  <option value="Imaging">Imaging</option>
+                </select>
+                <input name="doctor" placeholder="Lead Medical Specialist" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', padding: '12px', borderRadius: '8px', color: 'white' }} />
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button type="submit" className="btn-primary" style={{ flex: 1 }}>Deploy Record</button>
+                  <button type="button" onClick={() => setShowAddModal(false)} className="btn-ghost" style={{ flex: 1 }}>Abort</button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 };

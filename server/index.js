@@ -12,9 +12,15 @@ app.use(cors());
 app.use(express.json());
 
 // DB Connection
+console.log('Connecting to MongoDB...');
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB Connected to Clinical Vault'))
-  .catch(err => console.error('MongoDB Connection Error:', err));
+  .catch(err => {
+    console.error('MongoDB Connection Error:');
+    console.error(err);
+    process.exit(1);
+  });
+console.log('After DB connection call...');
 
 // Routes placeholder
 app.get('/', (req, res) => {
