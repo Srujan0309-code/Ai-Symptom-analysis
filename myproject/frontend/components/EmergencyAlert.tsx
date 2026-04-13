@@ -33,6 +33,7 @@ const EmergencyAlert = ({ isVisible, onClose }: EmergencyAlertProps) => {
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
             className="relative w-full max-w-xl bg-[#1e070b] border-2 border-rose-500 rounded-[3rem] p-10 shadow-[0_0_50px_rgba(225,29,72,0.5)] text-center overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Warning Icon Animation */}
             <motion.div

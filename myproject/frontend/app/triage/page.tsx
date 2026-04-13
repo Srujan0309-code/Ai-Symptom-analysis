@@ -5,10 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import SymptomInput from "@/components/SymptomInput";
 import AIResultCard from "@/components/AIResultCard";
 import EmergencyAlert from "@/components/EmergencyAlert";
+import { useLanguage } from "@/components/LanguageContext";
 import { analyzeSymptoms as analyzeApi } from "@/lib/api";
 import { ShieldAlert, Info } from "lucide-react";
 
 export default function TriagePage() {
+  const { language } = useLanguage();
   const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,7 @@ export default function TriagePage() {
     setError(null);
     setResult(null);
     try {
-      const data = await analyzeApi(symptoms, "user-123"); // Mock user id
+      const data = await analyzeApi(symptoms, "00000000-0000-0000-0000-000000000123", language); // Mock user id
       setResult(data);
     } catch (err) {
       setError("Something went wrong during analysis. Please try again.");

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Navbar from "./Navbar";
+import { useLanguage } from "@/components/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ClientLayout({
@@ -9,11 +9,11 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [language, setLanguage] = useState("en");
+  const { language } = useLanguage();
 
   return (
     <>
-      <Navbar language={language} setLanguage={setLanguage} />
+      <Navbar />
       <main className="min-h-screen hero-gradient pt-16">
         <AnimatePresence mode="wait">
           <motion.div

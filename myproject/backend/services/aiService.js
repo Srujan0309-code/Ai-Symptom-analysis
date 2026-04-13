@@ -1,10 +1,10 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const Groq = require('groq-sdk');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || 'dummy_key',
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || 'dummy_key',
 });
 
 const analyzeSymptoms = async (symptoms, language = 'en') => {
@@ -32,7 +32,7 @@ Respond ONLY with a JSON object in this format:
 }`;
 
   try {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       // Mock response for demo/if no key
       return {
         urgency: symptoms.toLowerCase().includes('chest') ? 'Emergency' : 'Medium',
@@ -44,17 +44,28 @@ Respond ONLY with a JSON object in this format:
       };
     }
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-sonnet-20240229',
-      max_tokens: 1000,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: `Analyze these symptoms: ${symptoms}` }],
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: `Analyze these symptoms: ${symptoms}`,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.2,
+      response_format: { type: "json_object" },
     });
 
-    const content = response.content[0].text;
+    let content = chatCompletion.choices[0]?.message?.content || "";
+    // Strip markdown code blocks if present
+    content = content.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
     return JSON.parse(content);
   } catch (error) {
-    console.error('Claude API Error:', error);
+    console.error('Groq API Error:', error);
     throw new Error('Failed to analyze symptoms');
   }
 };

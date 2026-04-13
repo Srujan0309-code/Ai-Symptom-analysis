@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export const useSpeech = () => {
   const [isListening, setIsListening] = useState(false);
