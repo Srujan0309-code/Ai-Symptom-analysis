@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { getSymptomHistory } = require('../services/supabaseService');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/:userId', async (req, res) => {
-  const { userId } = req.params;
+router.get('/', authMiddleware, async (req, res) => {
+  const userId = req.user.uid; // Provided by Firebase Admin
 
   try {
     const history = await getSymptomHistory(userId);

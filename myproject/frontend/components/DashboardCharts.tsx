@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { 
-  LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
+  AreaChart, Area, XAxis, YAxis, 
   Tooltip, ResponsiveContainer, BarChart, Bar 
 } from "recharts";
 
@@ -18,64 +18,84 @@ const data = [
 
 const DashboardCharts = () => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
       {/* Risk Trend Chart */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="glass p-8 rounded-[2.5rem] border-white/5 h-[400px]"
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        className="surface-card p-8 h-[380px] relative overflow-hidden"
       >
-        <div className="flex flex-col mb-8">
-          <h3 className="text-xl font-bold">Symptom Risk Trend</h3>
-          <p className="text-sm text-foreground/40">Aggregated urgency levels over the past 7 days.</p>
+        <div className="flex flex-col mb-6 relative z-10">
+          <h3 className="text-lg font-heading font-bold text-foreground">Symptom Risk Trend</h3>
+          <p className="text-[11px] text-on-surface-variant font-heading uppercase tracking-[0.1em] font-bold">Aggregated urgency over 7 days</p>
         </div>
-        <div className="w-full h-full pb-12">
+        <div className="w-full h-full pb-12 relative z-10">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>
-                <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                <linearGradient id="colorRiskLight" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#064e3b" stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor="#064e3b" stopOpacity={0}/>
                 </linearGradient>
               </defs>
+              <XAxis dataKey="name" stroke="#bfc9c3" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="#bfc9c3" fontSize={11} tickLine={false} axisLine={false} />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }}
-                itemStyle={{ color: '#fff' }}
+                contentStyle={{ 
+                  backgroundColor: '#f9f9ff', 
+                  border: 'none', 
+                  borderRadius: '12px', 
+                  boxShadow: '0 4px 30px rgba(20,27,43,0.08)',
+                  fontSize: '12px'
+                }}
+                itemStyle={{ color: '#064e3b' }}
               />
               <Area 
                 type="monotone" 
                 dataKey="risk" 
-                stroke="#3b82f6" 
-                strokeWidth={4}
+                stroke="#064e3b" 
+                strokeWidth={2.5}
                 fillOpacity={1} 
-                fill="url(#colorRisk)" 
+                fill="url(#colorRiskLight)" 
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </motion.div>
 
-      {/* Health Vitals Chart */}
+      {/* Health Score Chart */}
       <motion.div 
         initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="glass p-8 rounded-[2.5rem] border-white/5 h-[400px]"
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        className="surface-card p-8 h-[380px] relative overflow-hidden"
       >
-        <div className="flex flex-col mb-8">
-          <h3 className="text-xl font-bold">Health Score</h3>
-          <p className="text-sm text-foreground/40">Overall wellness score based on symptom history.</p>
+        <div className="flex flex-col mb-6 relative z-10">
+          <h3 className="text-lg font-heading font-bold text-foreground">Health Score</h3>
+          <p className="text-[11px] text-on-surface-variant font-heading uppercase tracking-[0.1em] font-bold">Overall wellness mapping</p>
         </div>
-        <div className="w-full h-full pb-12">
+        <div className="w-full h-full pb-12 relative z-10">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
+              <XAxis dataKey="name" stroke="#bfc9c3" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="#bfc9c3" fontSize={11} tickLine={false} axisLine={false} />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }}
+                contentStyle={{ 
+                  backgroundColor: '#f9f9ff', 
+                  border: 'none', 
+                  borderRadius: '12px', 
+                  boxShadow: '0 4px 30px rgba(20,27,43,0.08)',
+                  fontSize: '12px'
+                }}
+                itemStyle={{ color: '#6b38d4' }}
               />
               <Bar 
                 dataKey="vitals" 
-                fill="#8b5cf6" 
-                radius={[10, 10, 0, 0]} 
-                barSize={40}
+                fill="#6b38d4" 
+                radius={[8, 8, 0, 0]} 
+                barSize={28}
+                opacity={0.85}
               />
             </BarChart>
           </ResponsiveContainer>

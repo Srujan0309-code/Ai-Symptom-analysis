@@ -3,9 +3,6 @@ node_modules/
 .pnp
 .pnp.js
 
-# Other projects in parent directory (embedded git repos)
-ai-disaster-managment-system/
-
 # Environment variables - NEVER commit these
 .env
 .env.local

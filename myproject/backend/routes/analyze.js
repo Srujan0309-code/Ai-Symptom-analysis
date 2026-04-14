@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { analyzeSymptoms } = require('../services/aiService');
 const { saveSymptomLog } = require('../services/supabaseService');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.post('/', async (req, res) => {
-  const { symptoms, userId, language } = req.body;
+router.post('/', authMiddleware, async (req, res) => {
+  const { symptoms, language } = req.body;
+  const userId = req.user.uid;
 
   if (!symptoms) {
     return res.status(400).json({ error: 'Symptoms are required' });
@@ -14,15 +16,13 @@ router.post('/', async (req, res) => {
     const analysis = await analyzeSymptoms(symptoms, language);
     
     // Save to history asynchronously
-    if (userId) {
-      saveSymptomLog({
-        user_id: userId,
-        symptoms,
-        result: analysis,
-        urgency: analysis.urgency,
-        language: language || 'en'
-      });
-    }
+    saveSymptomLog({
+      user_id: userId,
+      symptoms,
+      result: analysis,
+      urgency: analysis.urgency,
+      language: language || 'en'
+    });
 
     res.json(analysis);
   } catch (error) {

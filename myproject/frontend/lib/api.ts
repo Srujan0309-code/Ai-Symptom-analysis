@@ -1,10 +1,23 @@
+import { auth } from "./firebase";
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
 
+const getAuthHeaders = async (baseHeaders: Record<string, string> = {}) => {
+  const user = auth.currentUser;
+  const headers = { ...baseHeaders };
+  if (user) {
+    const token = await user.getIdToken();
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 export const analyzeSymptoms = async (symptoms: string, userId?: string, language: string = 'en') => {
+  const headers = await getAuthHeaders({ 'Content-Type': 'application/json' });
   const response = await fetch(`${BACKEND_URL}/analyze`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ symptoms, userId, language }),
+    headers,
+    body: JSON.stringify({ symptoms, language }),
   });
   if (!response.ok) throw new Error('Analysis failed');
   return response.json();
@@ -19,8 +32,9 @@ export const fetchClinics = async (specialty?: string) => {
   return response.json();
 };
 
-export const fetchHistory = async (userId: string) => {
-  const response = await fetch(`${BACKEND_URL}/history/${userId}`);
+export const fetchHistory = async () => {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${BACKEND_URL}/history`, { headers });
   if (!response.ok) throw new Error('Failed to fetch history');
   return response.json();
 };

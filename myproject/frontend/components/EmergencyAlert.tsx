@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, Phone, Navigation, X } from "lucide-react";
+import { AlertCircle, Phone, Navigation, X, ShieldAlert } from "lucide-react";
 
 interface EmergencyAlertProps {
   isVisible: boolean;
@@ -16,67 +16,88 @@ const EmergencyAlert = ({ isVisible, onClose }: EmergencyAlertProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-6"
         >
-          {/* Backdrop with extreme pulse */}
+          {/* Backdrop with toned intensity */}
           <motion.div 
             animate={{ 
-              backgroundColor: ["rgba(225, 29, 72, 0.4)", "rgba(225, 29, 72, 0.7)", "rgba(225, 29, 72, 0.4)"] 
+              backgroundColor: ["rgba(186, 26, 26, 0.1)", "rgba(186, 26, 26, 0.25)", "rgba(186, 26, 26, 0.1)"] 
             }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="absolute inset-0 backdrop-blur-sm"
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="absolute inset-0 backdrop-blur-md"
             onClick={onClose}
           />
 
           <motion.div
-            initial={{ scale: 0.9, y: 20 }}
+            initial={{ scale: 0.95, y: 20 }}
             animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-            className="relative w-full max-w-xl bg-[#1e070b] border-2 border-rose-500 rounded-[3rem] p-10 shadow-[0_0_50px_rgba(225,29,72,0.5)] text-center overflow-hidden"
+            exit={{ scale: 0.95, y: 20 }}
+            className="relative w-full max-w-xl bg-white rounded-3xl p-10 shadow-[0_20px_80px_rgba(186,26,26,0.15)] text-center overflow-hidden border border-error/10"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Warning Icon Animation */}
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Infinity, duration: 1 }}
-              className="w-24 h-24 bg-rose-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(225,29,72,0.8)]"
-            >
-              <AlertCircle className="h-12 w-12 text-white" />
-            </motion.div>
+            {/* Top scanning line */}
+            <motion.div 
+              animate={{ x: ["-100%", "100%"] }}
+              transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+              className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-error to-transparent opacity-50"
+            />
 
-            <h2 className="text-4xl font-black text-white mb-4 uppercase tracking-tighter">CRITICAL EMERGENCY</h2>
-            <p className="text-rose-200/70 mb-10 text-lg">
-              Our AI has detected life-threatening symptoms. Please act immediately. 
-              Do not wait for further analysis.
-            </p>
+            {/* Warning Icon Cluster */}
+            <div className="relative mb-10">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="w-24 h-24 bg-error/8 rounded-full flex items-center justify-center mx-auto"
+              >
+                <div className="w-16 h-16 bg-error flex items-center justify-center rounded-full shadow-lg shadow-error/30">
+                  <AlertCircle className="h-8 w-8 text-white" />
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-dashed border-error/20 rounded-full"
+              />
+            </div>
+
+            <div className="space-y-4 mb-10">
+              <div className="flex items-center justify-center gap-2 text-error font-heading font-black uppercase tracking-[0.2em] text-xs">
+                <ShieldAlert className="h-4 w-4" />
+                Critical Priority Detected
+              </div>
+              <h2 className="text-4xl md:text-5xl font-heading font-extrabold text-foreground tracking-tight leading-none">
+                Immediate<br />Action Required
+              </h2>
+              <p className="text-on-surface-variant text-base md:text-lg max-w-md mx-auto leading-relaxed">
+                Life-threatening symptoms identified. Clinical routing suggests immediate professional intervention.
+              </p>
+            </div>
 
             <div className="flex flex-col gap-4">
               <a 
                 href="tel:911" 
-                className="w-full bg-rose-500 hover:bg-rose-600 text-white py-6 rounded-2xl font-black text-2xl flex items-center justify-center gap-4 transition-all active:scale-95 shadow-lg shadow-rose-900/50"
+                className="w-full bg-error hover:bg-error/90 text-white py-5 rounded-2xl font-heading font-black text-xl flex items-center justify-center gap-4 transition-all active:scale-95 shadow-xl shadow-error/20"
               >
-                <Phone className="h-8 w-8" />
+                <Phone className="h-6 w-6" />
                 CALL EMERGENCY (911)
               </a>
               <a 
                 href="/map?specialty=Emergency" 
-                className="w-full bg-white/10 hover:bg-white/20 text-white py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all"
+                className="w-full bg-surface-container hover:bg-surface-container-high text-foreground py-5 rounded-2xl font-heading font-bold text-lg flex items-center justify-center gap-3 transition-all"
               >
-                <Navigation className="h-5 w-5" />
-                Navigate to Nearest ER
+                <Navigation className="h-5 w-5 text-emerald" />
+                Find Nearest ER
               </a>
             </div>
 
             <button 
               onClick={onClose}
-              className="mt-8 text-rose-200/30 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 mx-auto"
+              className="mt-10 text-outline hover:text-foreground transition-colors text-sm font-heading font-bold flex items-center gap-2 mx-auto uppercase tracking-widest"
             >
               <X className="h-4 w-4" />
-              Dismiss (I am already in care)
+              Dismiss Security Alert
             </button>
-
-            {/* Scanning graphic */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-rose-500 shadow-[0_0_20px_rgba(225,29,72,1)] animate-[scan_2s_linear_infinite]" />
           </motion.div>
         </motion.div>
       )}
