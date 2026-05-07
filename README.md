@@ -1,7 +1,4 @@
-# 
-This is under development i want to add some more feature for user clarity,
-
-MediRoute AI — Full-Stack AI Healthcare Triage
+# MediRoute AI — Full-Stack AI Healthcare Triage
 
 MediRoute AI is a production-ready web application designed for intelligent symptom triage and clinical routing. Built with a premium "Glassmorphism" aesthetic, it combines real-time AI analysis with map-based hospital routing.
 
@@ -42,3 +39,7 @@ npm run dev
 ## 🧪 Testing the App
 1. **Low Urgency**: "I have a slight headache and a scratchy throat."
 2. **Medium Urgency**: "My stomach has been hurting sharply for two days."
+3. **Emergency**: "I am experiencing severe chest pain and left arm numbness."
+
+---
+Built with ❤️ for the Future of Healthcare.
