@@ -25,3 +25,5 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`MediRoute AI server running on port ${PORT}`);
 });
+
+module.exports = app;
