@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-interface Clinic {
+export interface Clinic {
   id: string;
   name: string;
-  specialty?: string;
+  specialty: string;
   lat: number;
   lng: number;
-  wait_time_minutes?: number;
-  address?: string;
-  rating?: number;
-  phone?: string;
+  wait_time_minutes: number;
+  address: string;
+  rating: number;
+  phone: string;
   email?: string;
   opening_hours?: string;
   isOpen?: boolean;
