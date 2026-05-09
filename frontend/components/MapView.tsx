@@ -106,7 +106,7 @@ async function fetchNearbyHospitals(lat: number, lng: number, radiusMeters = 150
     });
 }
 
-export default function MapView({ clinics, selectedClinic: _selectedClinic, onSelectClinic, onClinicsFetched, specialtyFilter: _specialtyFilter }: MapViewProps) {
+export default function MapView({ clinics, onSelectClinic, onClinicsFetched }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstanceRef = useRef<any>(null);
@@ -114,7 +114,7 @@ export default function MapView({ clinics, selectedClinic: _selectedClinic, onSe
   const markersRef = useRef<any[]>([]);
   const [status, setStatus] = useState<"locating" | "loading" | "ready" | "error">("locating");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const addMarkers = useCallback((L: any, map: any, hospitals: Clinic[]) => {
     markersRef.current.forEach((m: any) => m.remove());
     markersRef.current = [];
@@ -151,6 +151,7 @@ export default function MapView({ clinics, selectedClinic: _selectedClinic, onSe
       markersRef.current.push(marker);
     });
   }, [onSelectClinic]);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   useEffect(() => {
     let cancelled = false;

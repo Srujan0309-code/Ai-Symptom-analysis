@@ -34,7 +34,7 @@ export default function TriagePage() {
     try {
       const data = await analyzeApi(symptoms, undefined, language);
       setResult(data);
-    } catch (_err) {
+    } catch {
       setError("Something went wrong during analysis. Please try again.");
     } finally {
       setIsLoading(false);

@@ -3,8 +3,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { 
   onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
   signOut,
   GoogleAuthProvider,
   signInWithPopup,

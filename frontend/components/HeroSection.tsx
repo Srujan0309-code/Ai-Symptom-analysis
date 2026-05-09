@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight, Play, Shield, Heart, Brain } from "lucide-react";
 import { BlurText } from "./BlurText";
 
@@ -20,10 +21,11 @@ const HeroSection = () => {
         
         {/* Visual Background Accent */}
         <div className="absolute top-[180px] right-[5%] w-[300px] h-[300px] hidden xl:block opacity-20 pointer-events-none">
-          <img 
+          <Image 
             src="/medical_ai_1.png"
             alt="AI Architecture"
-            className="w-full h-full object-cover rounded-3xl rotate-12"
+            fill
+            className="object-cover rounded-3xl rotate-12"
           />
         </div>
         <motion.div 

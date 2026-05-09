@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const analyzeRoutes = require('./routes/analyze');
 const clinicRoutes = require('./routes/clinics');
 const historyRoutes = require('./routes/history');
+const reportRoutes = require('./routes/reports');
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/analyze', analyzeRoutes);
 app.use('/api/clinics', clinicRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });

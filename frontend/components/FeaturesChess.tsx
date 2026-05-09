@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity } from "lucide-react";
+import Image from "next/image";
 
 const features = [
   {
@@ -72,10 +72,11 @@ const FeaturesChess = () => {
             >
               <div className="surface-card h-[350px] lg:h-[450px] overflow-hidden rounded-2xl relative group">
                 {/* Real Medical Image */}
-                <img 
+                <Image 
                   src={idx === 0 ? "/medical_ai_1.png" : "/medical_specialist.png"}
                   alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 
                 {/* Overlay Overlay */}

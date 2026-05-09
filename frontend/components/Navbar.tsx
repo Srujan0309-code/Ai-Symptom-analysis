@@ -27,6 +27,9 @@ const Navbar = () => {
     { name: "Home", href: "/" },
     { name: "Triage", href: "/triage" },
     { name: "Map", href: "/map" },
+    { name: "Reports", href: "/reports" },
+    { name: "Wearable", href: "/wearable" },
+    { name: "Doctors", href: "/doctors" },
     { name: "Dashboard", href: "/dashboard" },
   ];
 
