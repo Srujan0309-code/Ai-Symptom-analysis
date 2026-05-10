@@ -26,13 +26,13 @@ export default function TriagePage() {
     }
   }, [user, loading, router]);
 
-  const handleAnalyze = async (symptoms: string) => {
+  const handleAnalyze = async (symptoms: string, imageBase64?: string) => {
     if (!user) return setError("Please sign in to analyze symptoms.");
     setIsLoading(true);
     setError(null);
     setResult(null);
     try {
-      const data = await analyzeApi(symptoms, undefined, language);
+      const data = await analyzeApi(symptoms, undefined, language, imageBase64);
       setResult(data);
     } catch {
       setError("Something went wrong during analysis. Please try again.");

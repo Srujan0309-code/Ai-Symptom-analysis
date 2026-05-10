@@ -12,12 +12,12 @@ const getAuthHeaders = async (baseHeaders: Record<string, string> = {}) => {
   return headers;
 };
 
-export const analyzeSymptoms = async (symptoms: string, userId?: string, language: string = 'en') => {
+export const analyzeSymptoms = async (symptoms: string, userId?: string, language: string = 'en', imageBase64?: string) => {
   const headers = await getAuthHeaders({ 'Content-Type': 'application/json' });
   const response = await fetch(`${BACKEND_URL}/analyze`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ symptoms, language }),
+    body: JSON.stringify({ symptoms, language, imageBase64 }),
   });
   if (!response.ok) throw new Error('Analysis failed');
   return response.json();

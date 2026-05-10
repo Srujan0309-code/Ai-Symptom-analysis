@@ -1,4 +1,5 @@
 const Groq = require('groq-sdk');
+const { GoogleGenAI } = require('@google/genai');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -6,6 +7,8 @@ dotenv.config();
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || '',
 });
+
+const geminiAi = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
 /**
  * Fetch related condition data from Wikipedia REST API
@@ -58,10 +61,42 @@ async function fetchDiseaseData(symptomKeyword) {
   }
 }
 
-const analyzeSymptoms = async (symptoms, language = 'en') => {
+const analyzeSymptoms = async (symptoms, language = 'en', imageBase64 = null) => {
   const languageContext = language === 'hi'
     ? 'The advice and category fields should be in Hindi. Keep JSON keys in English.'
     : 'All content must be in English.';
+
+  let visualContext = '';
+
+  if (imageBase64 && geminiAi) {
+    try {
+      console.log('[ANALYZE] Image provided, running Gemini Vision...');
+      // Expect imageBase64 to be something like "data:image/jpeg;base64,/9j/4AAQ..."
+      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      
+      const response = await geminiAi.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: 'Act as a clinical visual analyst. Describe any visible medical signs, dermatological conditions, or physical abnormalities in this image. Be clinical and factual.' },
+              {
+                inlineData: {
+                  data: base64Data,
+                  mimeType: imageBase64.match(/data:(.*?);base64/)?.[1] || 'image/jpeg',
+                }
+              }
+            ]
+          }
+        ]
+      });
+      visualContext = response.text ? `\n\nVisual Clinical Findings from uploaded image:\n${response.text}` : '';
+      console.log('[ANALYZE] Gemini Vision complete.');
+    } catch (err) {
+      console.error('[ANALYZE] Gemini Vision error:', err.message);
+    }
+  }
 
   // ---- ENHANCED SYSTEM PROMPT with clinical depth ----
   const systemPrompt = `You are MediRoute ClinicalAI — a multi-source medical triage intelligence system trained on clinical guidelines from WHO, CDC, NHS, Mayo Clinic, WebMD, and PubMed.
@@ -113,7 +148,7 @@ Respond ONLY with a valid JSON object in this EXACT format:
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Patient-reported symptoms: "${symptoms}"\n\nPlease perform a comprehensive clinical triage analysis.` },
+        { role: 'user', content: `Patient-reported symptoms: "${symptoms}"${visualContext}\n\nPlease perform a comprehensive clinical triage analysis taking all inputs into account.` },
       ],
       model: 'llama-3.3-70b-versatile',
       temperature: 0.15,

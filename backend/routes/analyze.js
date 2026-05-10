@@ -5,17 +5,17 @@ const { saveSymptomLog } = require('../services/supabaseService');
 const authMiddleware = require('../middleware/authMiddleware');
 
 router.post('/', authMiddleware, async (req, res) => {
-  const { symptoms, language } = req.body;
+  const { symptoms, language, imageBase64 } = req.body;
   const userId = req.user?.uid || 'anonymous';
 
-  console.log('[ANALYZE] Request received:', { symptoms: symptoms?.substring(0, 50), userId, language });
+  console.log('[ANALYZE] Request received:', { symptoms: symptoms?.substring(0, 50), userId, language, hasImage: !!imageBase64 });
 
   if (!symptoms) {
     return res.status(400).json({ error: 'Symptoms are required' });
   }
 
   try {
-    const analysis = await analyzeSymptoms(symptoms, language);
+    const analysis = await analyzeSymptoms(symptoms, language, imageBase64);
     console.log('[ANALYZE] Success:', { urgency: analysis.urgency, category: analysis.category });
     
     // Save to history asynchronously (don't block response)
