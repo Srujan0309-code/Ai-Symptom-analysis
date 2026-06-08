@@ -14,15 +14,13 @@ services:
       - key: GROQ_API_KEY
         sync: false
       - key: SUPABASE_URL
-        sync: false
+        value: ""
       - key: SUPABASE_ANON_KEY
-        sync: false
+        value: ""
       - key: GEMINI_API_KEY
-        sync: false
-        default: ""
+        value: ""
       - key: FIREBASE_SERVICE_ACCOUNT
-        sync: false
-        default: ""
+        value: ""
 
   # Next.js Frontend Web Service
   - type: web
@@ -34,4 +32,4 @@ services:
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_BACKEND_URL
-        default: https://mediroute-api.onrender.com/api
+        value: https://mediroute-api.onrender.com/api
