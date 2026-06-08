@@ -36,6 +36,28 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
+## 🚀 Deployment to Render
+
+You can easily deploy MediRoute AI to Render using Render Blueprints. The project includes a pre-configured `render.yaml` that sets up both the Express backend and the Next.js frontend automatically.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+### Step-by-Step Instructions:
+1. **Push to GitHub**: Push your local repository to a private or public GitHub repository.
+2. **Deploy via Render**:
+   - Go to the [Render Dashboard](https://dashboard.render.com).
+   - Click **New** (top right) and select **Blueprint**.
+   - Connect your GitHub repository.
+   - Render will read the `render.yaml` and prompt you to enter the environment variables.
+3. **Environment Variables**:
+   - **`GROQ_API_KEY`**: Your Groq API key for clinical triage (Required).
+   - **`NEXT_PUBLIC_BACKEND_URL`**: The public URL of your backend. By default, it is configured to reference `https://mediroute-api.onrender.com/api`. If you customize the backend service name, update this URL accordingly.
+   - **`SUPABASE_URL` & `SUPABASE_ANON_KEY`** (Optional): Supabase credentials. If not set, the application will fallback to high-fidelity mock data.
+   - **`GEMINI_API_KEY`** (Optional): Gemini API key for visual symptom analysis.
+   - **`FIREBASE_SERVICE_ACCOUNT`** (Optional): Firebase Admin SDK credentials in JSON format. If not set, user authentication claims will be processed in local verification fallback mode.
+
+---
+
 ## 🧪 Testing the App
 1. **Low Urgency**: "I have a slight headache and a scratchy throat."
 2. **Medium Urgency**: "My stomach has been hurting sharply for two days."
@@ -43,3 +65,4 @@ npm run dev
 
 ---
 Built with ❤️ for the Future of Healthcare.
+
