@@ -181,11 +181,14 @@ export default function MapView({
             // Filter out non-medical categories
             const hasBlacklistedType = p.types?.some((type) =>
               [
-                "school", "primary_school", "secondary_school", "university",
-                "spa", "beauty_salon", "hair_care", "gym", "lodging",
-                "restaurant", "cafe", "bar", "clothing_store", "shopping_mall",
-                "store", "place_of_worship", "church", "hindu_temple",
-                "amusement_park", "museum", "park", "stadium"
+                "school", "primary_school", "secondary_school", "university", "preschool",
+                "spa", "beauty_salon", "hair_care", "gym", "lodging", "hotel", "motel",
+                "restaurant", "cafe", "bar", "food", "bakery",
+                "clothing_store", "shopping_mall", "store", "supermarket",
+                "place_of_worship", "church", "hindu_temple", "synagogue", "mosque",
+                "amusement_park", "museum", "park", "stadium",
+                "bank", "atm", "finance", "accounting", "lawyer", "real_estate_agency",
+                "travel_agency", "post_office", "car_repair", "car_dealer", "gas_station", "parking"
               ].includes(type)
             );
             if (hasBlacklistedType) return false;
@@ -193,12 +196,14 @@ export default function MapView({
             // Filter out obviously non-medical names
             const name = p.name ? p.name.toLowerCase() : "";
             const hasBlacklistedKeyword = [
-              "school", "college", "academy", "university", "classes",
-              "spa", "salon", "parlour", "beauty", "gym", "fitness", "yoga",
-              "restaurant", "hotel", "cafe", "resort", "lodge", "bakery",
+              "school", "college", "academy", "university", "classes", "education",
+              "spa", "salon", "parlour", "beauty", "gym", "fitness", "yoga", "wellness center",
+              "restaurant", "hotel", "cafe", "resort", "lodge", "bakery", "food", "kitchen", "dhaba", "canteen",
               "church", "temple", "mosque", "ashram", "gurudwara",
-              "park", "mall", "supermarket", "jewellers", "clothing", "fashion",
-              "theatre", "cinema", "club", "residency", "apartment", "complex"
+              "park", "mall", "supermarket", "jewellers", "clothing", "fashion", "boutique", "tailor",
+              "theatre", "cinema", "club", "residency", "apartment", "complex", "housing", "society",
+              "bank", "atm", "finance", "co-operative", "cooperative", "coop", "co-op", "credit", "insurance",
+              "automotive", "garage", "hardware", "electrical", "stationery", "xerox", "photo", "studio", "developer", "construction"
             ].some((keyword) => name.includes(keyword));
             if (hasBlacklistedKeyword) return false;
 
