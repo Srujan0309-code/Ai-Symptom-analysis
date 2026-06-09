@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [history, setHistory] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [isLoading, setIsLoading] = useState(true);
+  const [isRealData, setIsRealData] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -28,19 +29,16 @@ export default function DashboardPage() {
         const data = await fetchHistory();
         if (data && data.length > 0) {
           setHistory(data);
+          setIsRealData(true);
         } else {
-          setHistory([
-            { id: '1', symptoms: 'Dull ache in lower back that gets worse when standing', urgency: 'Low', created_at: new Date().toISOString(), result: { category: 'Musculoskeletal' } },
-            { id: '2', symptoms: 'Severe headache and light sensitivity since morning', urgency: 'Medium', created_at: new Date(Date.now() - 86400000).toISOString(), result: { category: 'Neurological' } },
-            { id: '3', symptoms: 'Mild fever and dry cough', urgency: 'Low', created_at: new Date(Date.now() - 172800000).toISOString(), result: { category: 'Respiratory' } },
-          ]);
+          // No real records — show empty state, not dummy data
+          setHistory([]);
+          setIsRealData(false);
         }
       } catch (_err) {
-        setHistory([
-          { id: '1', symptoms: 'Dull ache in lower back that gets worse when standing', urgency: 'Low', created_at: new Date().toISOString(), result: { category: 'Musculoskeletal' } },
-          { id: '2', symptoms: 'Severe headache and light sensitivity since morning', urgency: 'Medium', created_at: new Date(Date.now() - 86400000).toISOString(), result: { category: 'Neurological' } },
-          { id: '3', symptoms: 'Mild fever and dry cough', urgency: 'Low', created_at: new Date(Date.now() - 172800000).toISOString(), result: { category: 'Respiratory' } },
-        ]);
+        // Backend error — show empty state
+        setHistory([]);
+        setIsRealData(false);
       } finally {
         setIsLoading(false);
       }
@@ -125,9 +123,9 @@ export default function DashboardPage() {
               </h2>
             </div>
 
+            {isRealData && history.length > 0 && (
             <button 
               onClick={async () => {
-                if (history.length === 0) return alert('No records found to export.');
                 const { jsPDF } = await import('jspdf');
                 const doc = new jsPDF();
                 doc.setFontSize(22);
@@ -160,6 +158,7 @@ export default function DashboardPage() {
               Export Report
               <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
