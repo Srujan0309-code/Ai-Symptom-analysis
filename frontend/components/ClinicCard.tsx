@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Clock, Phone, MapPin, Navigation, Info, Mail, Calendar, Globe, ExternalLink } from "lucide-react";
 
@@ -22,14 +22,30 @@ interface Clinic {
 const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelected: boolean, onClick: () => void }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  useEffect(() => {
+    if (isSelected) {
+      setIsExpanded(true);
+    } else {
+      setIsExpanded(false);
+    }
+  }, [isSelected]);
+
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.location.href = `tel:${clinic.phone}`;
+    if (clinic.phone && clinic.phone !== "Loading...") {
+      window.location.href = `tel:${clinic.phone}`;
+    } else {
+      onClick();
+    }
   };
 
   const toggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(!isExpanded);
+    if (!isSelected) {
+      onClick();
+    } else {
+      setIsExpanded(!isExpanded);
+    }
   };
 
   return (

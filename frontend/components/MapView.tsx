@@ -131,69 +131,151 @@ export default function MapView({
     }
   }, [selectedClinic, markersToRender, onClinicDetailsUpdated]);
 
-  // Fetch nearby hospitals using Places API
+  // Fetch nearby clinics, doctors, and hospitals using Places API (Deep Search)
   const fetchNearby = useCallback(
     (lat: number, lng: number) => {
       if (!mapRef.current) return;
       setStatus("loading");
 
       const service = new google.maps.places.PlacesService(mapRef.current);
-      const request: google.maps.places.PlaceSearchRequest = {
-        location: new google.maps.LatLng(lat, lng),
-        radius: 10000,
-        type: "hospital",
+
+      // Wrapper to turn Places nearbySearch callback into a Promise
+      const nearbySearchPromise = (req: google.maps.places.PlaceSearchRequest): Promise<google.maps.places.PlaceResult[]> => {
+        return new Promise((resolve) => {
+          service.nearbySearch(req, (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+              resolve(results);
+            } else {
+              resolve([]);
+            }
+          });
+        });
       };
 
-      service.nearbySearch(request, (results, status) => {
-        if (
-          status === google.maps.places.PlacesServiceStatus.OK &&
-          results &&
-          results.length > 0
-        ) {
-          const mapped: Clinic[] = results
-            .filter((p) => p.geometry?.location)
-            .map((p, i) => {
-              const clinicLat = p.geometry!.location!.lat();
-              const clinicLng = p.geometry!.location!.lng();
+      const radius = 15000; // Deep search radius: 15km
+      const reqHospital = nearbySearchPromise({
+        location: new google.maps.LatLng(lat, lng),
+        radius,
+        type: "hospital",
+      });
 
-              // Calculate Haversine distance
-              let distanceText = "2.4 km";
-              const R = 6371; // Earth's radius in km
-              const dLat = (clinicLat - lat) * Math.PI / 180;
-              const dLon = (clinicLng - lng) * Math.PI / 180;
-              const a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat * Math.PI / 180) *
-                  Math.cos(clinicLat * Math.PI / 180) *
-                  Math.sin(dLon / 2) *
-                  Math.sin(dLon / 2);
-              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-              const d = R * c;
-              distanceText = d < 1 ? `${Math.round(d * 1000)} m` : `${d.toFixed(1)} km`;
+      const reqDoctor = nearbySearchPromise({
+        location: new google.maps.LatLng(lat, lng),
+        radius,
+        type: "doctor",
+      });
 
-              return {
-                id: p.place_id || `gplace-${i}`,
-                name: p.name || "Hospital",
-                specialty: "General / Emergency",
-                lat: clinicLat,
-                lng: clinicLng,
-                address: p.vicinity || "Nearby",
-                rating: p.rating || +(4.0 + Math.random() * 0.9).toFixed(1),
-                phone: "Loading...",
-                wait_time_minutes: Math.floor(Math.random() * 35) + 5,
-                isOpen: p.opening_hours?.isOpen?.() ?? true,
-                opening_hours: p.opening_hours?.isOpen?.() ? "Open Now" : "Closed",
-                distanceText,
+      const reqClinic = nearbySearchPromise({
+        location: new google.maps.LatLng(lat, lng),
+        radius,
+        type: "medical_clinic",
+      });
+
+      Promise.all([reqHospital, reqDoctor, reqClinic])
+        .then((allResults) => {
+          const merged = allResults.flat();
+          const seen = new Set<string>();
+          const unique = merged.filter((p) => {
+            if (!p.place_id || seen.has(p.place_id)) return false;
+
+            // Filter out non-medical categories
+            const hasBlacklistedType = p.types?.some((type) =>
+              [
+                "school", "primary_school", "secondary_school", "university",
+                "spa", "beauty_salon", "hair_care", "gym", "lodging",
+                "restaurant", "cafe", "bar", "clothing_store", "shopping_mall",
+                "store", "place_of_worship", "church", "hindu_temple",
+                "amusement_park", "museum", "park", "stadium"
+              ].includes(type)
+            );
+            if (hasBlacklistedType) return false;
+
+            // Filter out obviously non-medical names
+            const name = p.name ? p.name.toLowerCase() : "";
+            const hasBlacklistedKeyword = [
+              "school", "college", "academy", "university", "classes",
+              "spa", "salon", "parlour", "beauty", "gym", "fitness", "yoga",
+              "restaurant", "hotel", "cafe", "resort", "lodge", "bakery",
+              "church", "temple", "mosque", "ashram", "gurudwara",
+              "park", "mall", "supermarket", "jewellers", "clothing", "fashion",
+              "theatre", "cinema", "club", "residency", "apartment", "complex"
+            ].some((keyword) => name.includes(keyword));
+            if (hasBlacklistedKeyword) return false;
+
+            seen.add(p.place_id);
+            return true;
+          });
+
+          if (unique.length > 0) {
+            const mapped: Clinic[] = unique
+              .filter((p) => p.geometry?.location)
+              .map((p, i) => {
+                const clinicLat = p.geometry!.location!.lat();
+                const clinicLng = p.geometry!.location!.lng();
+
+                // Calculate Haversine distance
+                let distanceText = "2.4 km";
+                const R = 6371;
+                const dLat = (clinicLat - lat) * Math.PI / 180;
+                const dLon = (clinicLng - lng) * Math.PI / 180;
+                const a =
+                  Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(lat * Math.PI / 180) *
+                    Math.cos(clinicLat * Math.PI / 180) *
+                    Math.sin(dLon / 2) *
+                    Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const d = R * c;
+                distanceText = d < 1 ? `${Math.round(d * 1000)} m` : `${d.toFixed(1)} km`;
+
+                // Determine specialty classification
+                let specialty = "General Care";
+                if (p.types?.includes("hospital")) {
+                  specialty = "General / Emergency";
+                } else if (p.types?.includes("doctor")) {
+                  specialty = "Doctor Consultation";
+                } else if (p.types?.includes("medical_clinic")) {
+                  specialty = "Medical Clinic";
+                }
+
+                const isOpenNow = p.opening_hours ? (p.opening_hours.isOpen?.() ?? true) : true;
+
+                return {
+                  id: p.place_id || `gplace-${i}`,
+                  name: p.name || "Clinic / Hospital",
+                  specialty,
+                  lat: clinicLat,
+                  lng: clinicLng,
+                  address: p.vicinity || "Nearby",
+                  rating: p.rating || +(4.0 + Math.random() * 0.9).toFixed(1),
+                  phone: "Loading...",
+                  wait_time_minutes: Math.floor(Math.random() * 35) + 5,
+                  isOpen: isOpenNow,
+                  opening_hours: isOpenNow ? "Open Now" : "Closed",
+                  distanceText,
+                };
+              });
+
+            // Sort by closest distance first
+            mapped.sort((a, b) => {
+              const getMeters = (text: string) => {
+                if (text.includes("m") && !text.includes("km")) return parseFloat(text);
+                return parseFloat(text) * 1000;
               };
+              return getMeters(a.distanceText || "") - getMeters(b.distanceText || "");
             });
 
-          setHospitals(mapped);
-          setStatus("ready");
-          onClinicsFetched?.(mapped);
-        } else {
+            setHospitals(mapped);
+            setStatus("ready");
+            onClinicsFetched?.(mapped);
+          } else {
+            setStatus("error");
+          }
+        })
+        .catch((err) => {
+          console.error("Deep search error:", err);
           setStatus("error");
-        }
-      });
+        });
     },
     [onClinicsFetched]
   );
