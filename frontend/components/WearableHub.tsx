@@ -86,11 +86,6 @@ export default function WearableHub() {
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [batteryLevel, setBatteryLevel] = useState(85);
 
-  useEffect(() => {
-    setDeviceName(deviceNames[Math.floor(Math.random() * deviceNames.length)]);
-    setBatteryLevel(Math.floor(30 + Math.random() * 65));
-  }, []);
-
   const handleSync = () => {
     setIsSyncing(true);
     setTimeout(() => {
@@ -104,6 +99,8 @@ export default function WearableHub() {
   const handleConnect = () => {
     setIsSyncing(true);
     setTimeout(() => {
+      setDeviceName(deviceNames[Math.floor(Math.random() * deviceNames.length)]);
+      setBatteryLevel(Math.floor(30 + Math.random() * 65));
       setIsConnected(true);
       setVitals(generateVitals());
       setLastSyncTime(new Date());

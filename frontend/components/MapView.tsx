@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -63,7 +63,6 @@ export default function MapView({
   onSelectClinic,
   onClinicsFetched,
   onClinicDetailsUpdated,
-  specialtyFilter,
 }: MapViewProps) {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -73,25 +72,30 @@ export default function MapView({
   const mapRef = useRef<google.maps.Map | null>(null);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [hospitals, setHospitals] = useState<Clinic[]>([]);
-  const [selectedInfo, setSelectedInfo] = useState<Clinic | null>(null);
+  const [selectedDetails, setSelectedDetails] = useState<Clinic | null>(null);
   const [status, setStatus] = useState<"locating" | "loading" | "ready" | "error">("locating");
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
   }, []);
 
-  const markersToRender = clinics && clinics.length > 0 ? clinics : hospitals;
+  const markersToRender = useMemo(
+    () => (clinics && clinics.length > 0 ? clinics : hospitals),
+    [clinics, hospitals]
+  );
+  const selectedMarker = useMemo(
+    () => (selectedClinic ? markersToRender.find((h) => h.id === selectedClinic) ?? null : null),
+    [markersToRender, selectedClinic]
+  );
+  const selectedInfo = selectedDetails?.id === selectedClinic ? selectedDetails : selectedMarker;
 
   // Synchronize selectedClinic prop with local state and pan map
   useEffect(() => {
-    if (selectedClinic) {
-      const found = markersToRender.find((h) => h.id === selectedClinic);
-      if (found) {
-        setSelectedInfo(found);
-        mapRef.current?.panTo({ lat: found.lat, lng: found.lng });
+    if (selectedClinic && selectedMarker) {
+        mapRef.current?.panTo({ lat: selectedMarker.lat, lng: selectedMarker.lng });
 
         // Fetch real details if the clinic phone is the default/fake placeholder
-        if ((found.phone === "+91 999 888 7777" || found.phone === "Loading...") && mapRef.current) {
+        if ((selectedMarker.phone === "+91 999 888 7777" || selectedMarker.phone === "Loading...") && mapRef.current) {
           try {
             const service = new google.maps.places.PlacesService(mapRef.current);
             service.getDetails(
@@ -102,21 +106,21 @@ export default function MapView({
               (place, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && place) {
                   const updated: Clinic = {
-                    ...found,
+                    ...selectedMarker,
                     phone: place.formatted_phone_number || "Not available",
                     website: place.website || undefined,
                     opening_hours: place.opening_hours?.weekday_text
                       ? place.opening_hours.weekday_text.join(" | ")
-                      : found.opening_hours,
+                      : selectedMarker.opening_hours,
                   };
-                  setSelectedInfo(updated);
+                  setSelectedDetails(updated);
                   onClinicDetailsUpdated?.(updated);
                 } else {
                   const updated: Clinic = {
-                    ...found,
+                    ...selectedMarker,
                     phone: "Not available",
                   };
-                  setSelectedInfo(updated);
+                  setSelectedDetails(updated);
                   onClinicDetailsUpdated?.(updated);
                 }
               }
@@ -125,11 +129,8 @@ export default function MapView({
             console.error("Error fetching place details:", err);
           }
         }
-      }
-    } else {
-      setSelectedInfo(null);
     }
-  }, [selectedClinic, markersToRender, onClinicDetailsUpdated]);
+  }, [selectedClinic, selectedMarker, onClinicDetailsUpdated]);
 
   // Fetch nearby clinics, doctors, and hospitals using Places API (Deep Search)
   const fetchNearby = useCallback(
@@ -290,7 +291,7 @@ export default function MapView({
     if (!isLoaded) return;
 
     if (!navigator.geolocation) {
-      setStatus("error");
+      setTimeout(() => setStatus("error"), 0);
       return;
     }
 
@@ -394,7 +395,7 @@ export default function MapView({
               strokeWeight: 2.5,
             }}
             onClick={() => {
-              setSelectedInfo(h);
+              setSelectedDetails(h);
               onSelectClinic(h.id);
             }}
             zIndex={100}
@@ -405,7 +406,7 @@ export default function MapView({
         {selectedInfo && (
           <InfoWindow
             position={{ lat: selectedInfo.lat, lng: selectedInfo.lng }}
-            onCloseClick={() => setSelectedInfo(null)}
+            onCloseClick={() => setSelectedDetails(null)}
           >
             <div style={{
               fontFamily: "'Inter', sans-serif",

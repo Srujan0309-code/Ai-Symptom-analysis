@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Clock, Phone, MapPin, Navigation, Info, Mail, Calendar, Globe, ExternalLink } from "lucide-react";
 
@@ -20,15 +20,13 @@ interface Clinic {
 }
 
 const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelected: boolean, onClick: () => void }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const isExpanded = isSelected && !isCollapsed;
 
-  useEffect(() => {
-    if (isSelected) {
-      setIsExpanded(true);
-    } else {
-      setIsExpanded(false);
-    }
-  }, [isSelected]);
+  const handleCardClick = () => {
+    setIsCollapsed(false);
+    onClick();
+  };
 
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -42,9 +40,10 @@ const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelecte
   const toggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isSelected) {
+      setIsCollapsed(false);
       onClick();
     } else {
-      setIsExpanded(!isExpanded);
+      setIsCollapsed(!isCollapsed);
     }
   };
 
@@ -52,7 +51,7 @@ const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelecte
     <motion.div
       layout
       whileHover={{ y: -3 }}
-      onClick={onClick}
+      onClick={handleCardClick}
       className={`p-6 rounded-2xl cursor-pointer transition-all relative overflow-hidden ${isSelected ? 'surface-float ring-2 ring-emerald/20 editorial-shadow-hover' : 'surface-card'}`}
     >
       <div className="flex justify-between items-start mb-5 relative z-10">
