@@ -137,7 +137,10 @@ export default function WearableHub() {
             <Watch className="h-5 w-5 text-sky-400" />
           </div>
           <div>
-            <h3 className="font-heading font-extrabold text-foreground text-lg">Wearable Health Hub</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-heading font-extrabold text-foreground text-lg">Wearable Health Hub</h3>
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-heading font-bold uppercase tracking-[0.1em]">Demo Mode</span>
+            </div>
             <p className="text-on-surface-variant text-xs mt-0.5">
               {isConnected ? deviceName : "Connect your smartwatch to sync vitals"}
             </p>
@@ -277,6 +280,13 @@ export default function WearableHub() {
             </p>
           </div>
         )}
+        {/* Demo disclaimer */}
+        <div className="mt-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 flex items-start gap-2">
+          <span className="text-amber-500 text-[10px] mt-0.5">⚠</span>
+          <p className="text-[10px] text-on-surface-variant leading-relaxed">
+            <span className="font-heading font-bold text-amber-500">Demo Mode:</span> Vitals shown are simulated for demonstration. Real smartwatch BLE integration requires a native mobile app (iOS/Android Health APIs).
+          </p>
+        </div>
       </div>
     </motion.div>
   );

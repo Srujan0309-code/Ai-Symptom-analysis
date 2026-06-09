@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Stethoscope, Star, Clock, MessageSquare, Video,
-  Phone, X, Send, CheckCircle2, Loader2
+  Phone, X, Send, CheckCircle2, Loader2, ExternalLink
 } from "lucide-react";
 
 interface Doctor {
@@ -19,6 +19,7 @@ interface Doctor {
   avatar: string;
   fee: string;
   languages: string[];
+  meetLink: string;
 }
 
 const MOCK_DOCTORS: Doctor[] = [
@@ -34,6 +35,7 @@ const MOCK_DOCTORS: Doctor[] = [
     avatar: "PS",
     fee: "₹500 / session",
     languages: ["English", "Hindi", "Tamil"],
+    meetLink: "https://meet.jit.si/MediRoute-DrPriyaSharma",
   },
   {
     id: "d2",
@@ -47,6 +49,7 @@ const MOCK_DOCTORS: Doctor[] = [
     avatar: "AM",
     fee: "₹1200 / session",
     languages: ["English", "Hindi"],
+    meetLink: "https://meet.jit.si/MediRoute-DrArjunMehta",
   },
   {
     id: "d3",
@@ -60,6 +63,7 @@ const MOCK_DOCTORS: Doctor[] = [
     avatar: "SR",
     fee: "₹900 / session",
     languages: ["English", "Telugu", "Kannada"],
+    meetLink: "https://meet.jit.si/MediRoute-DrSnehaReddy",
   },
   {
     id: "d4",
@@ -73,6 +77,7 @@ const MOCK_DOCTORS: Doctor[] = [
     avatar: "VN",
     fee: "₹750 / session",
     languages: ["English", "Hindi", "Malayalam"],
+    meetLink: "https://meet.jit.si/MediRoute-DrVikramNair",
   },
 ];
 
@@ -95,12 +100,15 @@ interface ChatMessage {
   time: string;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api";
+
 export default function DoctorConnect({ suggestedSpecialty }: { suggestedSpecialty?: string }) {
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const filteredDoctors = suggestedSpecialty
     ? MOCK_DOCTORS.filter(d => d.specialty.toLowerCase().includes(suggestedSpecialty.toLowerCase())).concat(
@@ -108,49 +116,96 @@ export default function DoctorConnect({ suggestedSpecialty }: { suggestedSpecial
       )
     : MOCK_DOCTORS;
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const openChat = (doctor: Doctor) => {
     setSelectedDoctor(doctor);
     setChatOpen(true);
     setMessages([
       {
         role: "doctor",
-        text: `Hello! I'm ${doctor.name}. I've reviewed your profile. How can I help you today?`,
+        text: `Hello! I'm ${doctor.name}, ${doctor.specialty} at ${doctor.hospital}. How can I help you today? Please describe your symptoms or concerns.`,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ]);
   };
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
+  const openVideoCall = (doctor: Doctor) => {
+    window.open(doctor.meetLink, "_blank", "noopener,noreferrer");
+  };
+
+  const sendMessage = async () => {
+    if (!inputText.trim() || !selectedDoctor) return;
+
     const userMsg: ChatMessage = {
       role: "user",
       text: inputText,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
     setMessages(prev => [...prev, userMsg]);
+    const currentInput = inputText;
     setInputText("");
     setIsSending(true);
 
-    // Simulate doctor reply
-    setTimeout(() => {
-      const responses = [
-        "Thank you for sharing that. Could you tell me when these symptoms started?",
-        "I understand. Have you noticed any other accompanying symptoms?",
-        "That's helpful information. I recommend we schedule a proper consultation for a thorough evaluation.",
-        "Based on what you've described, this sounds like it may need attention. I'll arrange for further tests.",
-        "Please don't worry — this is something we can address. Let me prepare a management plan for you.",
-      ];
-      const reply = responses[Math.floor(Math.random() * responses.length)];
+    try {
+      // Build conversation history for context
+      const conversationHistory = messages.map(m => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.text,
+      }));
+
+      const res = await fetch(`${BACKEND_URL}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symptoms: currentInput,
+          language: "en",
+          doctorChat: true,
+          doctorName: selectedDoctor.name,
+          doctorSpecialty: selectedDoctor.specialty,
+          conversationHistory,
+        }),
+      });
+
+      if (!res.ok) throw new Error("AI unavailable");
+      const data = await res.json();
+
+      // Use the AI's advice field or construct from the result
+      const replyText =
+        data.doctorReply ||
+        data.advice ||
+        `Based on what you've shared, ${data.recommendation || "I recommend scheduling an in-person consultation for a thorough evaluation. Could you tell me more about when these symptoms started and their severity?"}`;
+
       setMessages(prev => [
         ...prev,
         {
           role: "doctor",
-          text: reply,
+          text: replyText,
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
+    } catch {
+      // Fallback AI-like response
+      const fallbacks = [
+        "Thank you for sharing that. Could you describe the intensity of this symptom on a scale of 1–10?",
+        "I understand your concern. How long have you been experiencing this? Any recent changes in diet, sleep, or stress levels?",
+        "That's important information. Are you currently on any medications or have any known allergies?",
+        "Based on what you've described, this warrants attention. I'd suggest we book a proper consultation for a full evaluation.",
+        "I hear you. Have you experienced similar symptoms before? Any family history of related conditions?",
+      ];
+      setMessages(prev => [
+        ...prev,
+        {
+          role: "doctor",
+          text: fallbacks[Math.floor(Math.random() * fallbacks.length)],
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        },
+      ]);
+    } finally {
       setIsSending(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -202,13 +257,13 @@ export default function DoctorConnect({ suggestedSpecialty }: { suggestedSpecial
                     </div>
                   </div>
                   <p className="text-emerald text-[11px] font-heading font-bold uppercase tracking-[0.12em]">{doctor.specialty}</p>
-                  <p className="text-on-surface-variant text-xs">{doctor.hospital} · {doctor.experience} exp</p>
+                  <p className="text-on-surface-variant text-xs">{doctor.hospital} · {doctor.experience} exp · {doctor.languages.join(", ")}</p>
 
                   <div className="flex items-center gap-4 flex-wrap pt-1">
                     <div className="flex items-center gap-1 text-amber-400 text-xs">
                       <Star className="h-3 w-3 fill-amber-400" />
                       <span className="font-heading font-bold text-foreground">{doctor.rating}</span>
-                      <span className="text-on-surface-variant">({doctor.reviews})</span>
+                      <span className="text-on-surface-variant">({doctor.reviews} reviews)</span>
                     </div>
                     <div className="flex items-center gap-1 text-on-surface-variant text-xs">
                       <Clock className="h-3 w-3" />
@@ -227,11 +282,19 @@ export default function DoctorConnect({ suggestedSpecialty }: { suggestedSpecial
                     <MessageSquare className="h-3.5 w-3.5" />
                     Chat
                   </button>
-                  <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-lavender/10 text-lavender hover:bg-lavender/20 font-heading font-bold text-xs transition-all">
+                  <button
+                    onClick={() => openVideoCall(doctor)}
+                    disabled={doctor.availability === "Busy"}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-lavender/10 text-lavender hover:bg-lavender/20 font-heading font-bold text-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
                     <Video className="h-3.5 w-3.5" />
                     Video
                   </button>
-                  <button className="p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-foreground transition-all">
+                  <button
+                    onClick={() => window.open(`tel:+919998887777`, "_self")}
+                    className="p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-foreground transition-all"
+                    title="Call Doctor"
+                  >
                     <Phone className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -266,15 +329,25 @@ export default function DoctorConnect({ suggestedSpecialty }: { suggestedSpecial
                   <p className="font-heading font-extrabold text-foreground text-sm">{selectedDoctor.name}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <CheckCircle2 className="h-3 w-3 text-emerald" />
-                    <span className="text-emerald text-[10px] font-heading font-bold uppercase tracking-[0.1em]">Online Now</span>
+                    <span className="text-emerald text-[10px] font-heading font-bold uppercase tracking-[0.1em]">AI-Assisted Consultation</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setChatOpen(false)}
-                  className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center hover:bg-surface-container-high transition-colors"
-                >
-                  <X className="h-4 w-4 text-on-surface-variant" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openVideoCall(selectedDoctor)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-lavender/10 text-lavender hover:bg-lavender/20 font-heading font-bold text-xs transition-all"
+                    title="Start Video Call"
+                  >
+                    <Video className="h-3.5 w-3.5" />
+                    <ExternalLink className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => setChatOpen(false)}
+                    className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center hover:bg-surface-container-high transition-colors"
+                  >
+                    <X className="h-4 w-4 text-on-surface-variant" />
+                  </button>
+                </div>
               </div>
 
               {/* Messages */}
@@ -312,6 +385,7 @@ export default function DoctorConnect({ suggestedSpecialty }: { suggestedSpecial
                     </div>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Input */}
@@ -320,7 +394,7 @@ export default function DoctorConnect({ suggestedSpecialty }: { suggestedSpecial
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
-                  placeholder="Describe your concern..."
+                  placeholder="Describe your symptoms..."
                   className="flex-1 bg-surface-container-low rounded-2xl px-4 py-3 text-sm text-foreground placeholder:text-outline outline-none border border-outline-variant/10 focus:border-lavender/30 transition-colors"
                 />
                 <motion.button
@@ -331,6 +405,10 @@ export default function DoctorConnect({ suggestedSpecialty }: { suggestedSpecial
                 >
                   {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </motion.button>
+              </div>
+
+              <div className="px-5 pb-4 text-center">
+                <p className="text-[10px] text-outline">AI-assisted responses · Not a substitute for professional medical advice</p>
               </div>
             </motion.div>
           </motion.div>

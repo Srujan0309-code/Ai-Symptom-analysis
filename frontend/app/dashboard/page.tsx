@@ -108,7 +108,7 @@ export default function DashboardPage() {
 
         {/* Charts */}
         <div className="mb-24">
-          <DashboardCharts />
+          <DashboardCharts history={isRealData ? history : []} />
         </div>
 
         {/* History */}
