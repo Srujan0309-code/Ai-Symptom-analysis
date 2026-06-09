@@ -57,6 +57,15 @@ function MapContent() {
     setIsLoading(false);
   };
 
+  const handleClinicDetailsUpdated = (updatedClinic: Clinic) => {
+    setRawLocalClinics((prev) =>
+      prev.map((c) => (c.id === updatedClinic.id ? updatedClinic : c))
+    );
+    setClinics((prev) =>
+      prev.map((c) => (c.id === updatedClinic.id ? updatedClinic : c))
+    );
+  };
+
   const filteredLocal = rawLocalClinics.filter(c => 
     !filter || 
     c.specialty?.toLowerCase().includes(filter.toLowerCase()) || 
@@ -157,6 +166,7 @@ function MapContent() {
             selectedClinic={selectedClinic}
             onSelectClinic={setSelectedClinic}
             onClinicsFetched={handleClinicsFetched}
+            onClinicDetailsUpdated={handleClinicDetailsUpdated}
             specialtyFilter={filter}
           />
         </div>

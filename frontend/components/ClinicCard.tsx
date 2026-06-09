@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Clock, Phone, MapPin, Navigation, Info, Mail, Calendar } from "lucide-react";
+import { Star, Clock, Phone, MapPin, Navigation, Info, Mail, Calendar, Globe, ExternalLink } from "lucide-react";
 
 interface Clinic {
   id: string;
@@ -12,9 +12,11 @@ interface Clinic {
   rating: number;
   phone: string;
   email?: string;
+  website?: string;
   opening_hours?: string;
   isOpen?: boolean;
   wait_time_minutes: number;
+  distanceText?: string;
 }
 
 const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelected: boolean, onClick: () => void }) => {
@@ -76,7 +78,7 @@ const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelecte
           </div>
           <div>
             <div className="text-[9px] text-on-surface-variant uppercase font-heading font-bold tracking-[0.1em]">Distance</div>
-            <div className="text-sm font-heading font-bold text-foreground">2.4 km</div>
+            <div className="text-sm font-heading font-bold text-foreground">{clinic.distanceText || "2.4 km"}</div>
           </div>
         </div>
       </div>
@@ -106,6 +108,24 @@ const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelecte
                 )}
               </div>
             </div>
+            {clinic.website && (
+              <div className="flex items-start gap-3 text-sm">
+                <Globe className="h-4 w-4 text-emerald mt-0.5" />
+                <div className="leading-tight">
+                  <div className="font-heading font-bold text-[9px] text-on-surface-variant uppercase tracking-[0.1em] mb-1">Website</div>
+                  <a
+                    href={clinic.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-foreground hover:text-emerald transition-colors font-body text-xs inline-flex items-center gap-1.5"
+                  >
+                    Visit Website
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            )}
             <div className="flex items-start gap-3 text-sm">
               <Phone className="h-4 w-4 text-emerald mt-0.5" />
               <div className="leading-tight">

@@ -20,8 +20,10 @@ export interface Clinic {
   rating: number;
   phone: string;
   email?: string;
+  website?: string;
   opening_hours?: string;
   isOpen?: boolean;
+  distanceText?: string;
 }
 
 interface MapViewProps {
@@ -29,6 +31,7 @@ interface MapViewProps {
   selectedClinic: string | null;
   onSelectClinic: (id: string) => void;
   onClinicsFetched?: (clinics: Clinic[]) => void;
+  onClinicDetailsUpdated?: (clinic: Clinic) => void;
   specialtyFilter?: string;
 }
 
@@ -55,8 +58,12 @@ const MAP_CONTAINER_STYLE = { width: "100%", height: "100%" };
 const DEFAULT_CENTER = { lat: 20.5937, lng: 78.9629 };
 
 export default function MapView({
+  clinics,
+  selectedClinic,
   onSelectClinic,
   onClinicsFetched,
+  onClinicDetailsUpdated,
+  specialtyFilter,
 }: MapViewProps) {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -72,6 +79,50 @@ export default function MapView({
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
   }, []);
+
+  const markersToRender = clinics && clinics.length > 0 ? clinics : hospitals;
+
+  // Synchronize selectedClinic prop with local state and pan map
+  useEffect(() => {
+    if (selectedClinic) {
+      const found = markersToRender.find((h) => h.id === selectedClinic);
+      if (found) {
+        setSelectedInfo(found);
+        mapRef.current?.panTo({ lat: found.lat, lng: found.lng });
+
+        // Fetch real details if the clinic phone is the default/fake placeholder
+        if (found.phone === "+91 999 888 7777" && mapRef.current) {
+          try {
+            const service = new google.maps.places.PlacesService(mapRef.current);
+            service.getDetails(
+              {
+                placeId: selectedClinic,
+                fields: ["formatted_phone_number", "website", "opening_hours"],
+              },
+              (place, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+                  const updated: Clinic = {
+                    ...found,
+                    phone: place.formatted_phone_number || found.phone,
+                    website: place.website || undefined,
+                    opening_hours: place.opening_hours?.weekday_text
+                      ? place.opening_hours.weekday_text.join(" | ")
+                      : found.opening_hours,
+                  };
+                  setSelectedInfo(updated);
+                  onClinicDetailsUpdated?.(updated);
+                }
+              }
+            );
+          } catch (err) {
+            console.error("Error fetching place details:", err);
+          }
+        }
+      }
+    } else {
+      setSelectedInfo(null);
+    }
+  }, [selectedClinic, markersToRender, onClinicDetailsUpdated]);
 
   // Fetch nearby hospitals using Places API
   const fetchNearby = useCallback(
@@ -94,19 +145,40 @@ export default function MapView({
         ) {
           const mapped: Clinic[] = results
             .filter((p) => p.geometry?.location)
-            .map((p, i) => ({
-              id: p.place_id || `gplace-${i}`,
-              name: p.name || "Hospital",
-              specialty: "General / Emergency",
-              lat: p.geometry!.location!.lat(),
-              lng: p.geometry!.location!.lng(),
-              address: p.vicinity || "Nearby",
-              rating: p.rating || +(4.0 + Math.random() * 0.9).toFixed(1),
-              phone: "+91 999 888 7777",
-              wait_time_minutes: Math.floor(Math.random() * 35) + 5,
-              isOpen: p.opening_hours?.isOpen?.() ?? true,
-              opening_hours: p.opening_hours?.isOpen?.() ? "Open Now" : "Closed",
-            }));
+            .map((p, i) => {
+              const clinicLat = p.geometry!.location!.lat();
+              const clinicLng = p.geometry!.location!.lng();
+
+              // Calculate Haversine distance
+              let distanceText = "2.4 km";
+              const R = 6371; // Earth's radius in km
+              const dLat = (clinicLat - lat) * Math.PI / 180;
+              const dLon = (clinicLng - lng) * Math.PI / 180;
+              const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat * Math.PI / 180) *
+                  Math.cos(clinicLat * Math.PI / 180) *
+                  Math.sin(dLon / 2) *
+                  Math.sin(dLon / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              const d = R * c;
+              distanceText = d < 1 ? `${Math.round(d * 1000)} m` : `${d.toFixed(1)} km`;
+
+              return {
+                id: p.place_id || `gplace-${i}`,
+                name: p.name || "Hospital",
+                specialty: "General / Emergency",
+                lat: clinicLat,
+                lng: clinicLng,
+                address: p.vicinity || "Nearby",
+                rating: p.rating || +(4.0 + Math.random() * 0.9).toFixed(1),
+                phone: "+91 999 888 7777",
+                wait_time_minutes: Math.floor(Math.random() * 35) + 5,
+                isOpen: p.opening_hours?.isOpen?.() ?? true,
+                opening_hours: p.opening_hours?.isOpen?.() ? "Open Now" : "Closed",
+                distanceText,
+              };
+            });
 
           setHospitals(mapped);
           setStatus("ready");
@@ -214,7 +286,7 @@ export default function MapView({
         )}
 
         {/* Hospital markers */}
-        {hospitals.map((h) => (
+        {markersToRender.map((h) => (
           <Marker
             key={h.id}
             position={{ lat: h.lat, lng: h.lng }}
@@ -272,6 +344,11 @@ export default function MapView({
               {selectedInfo.address && (
                 <div style={{ fontSize: "12px", color: "#6b7280", marginBottom: "6px" }}>
                   📍 {selectedInfo.address}
+                </div>
+              )}
+              {selectedInfo.phone && selectedInfo.phone !== "+91 999 888 7777" && (
+                <div style={{ fontSize: "12px", color: "#374151", fontWeight: 500, marginBottom: "6px" }}>
+                  📞 {selectedInfo.phone}
                 </div>
               )}
               <div style={{ fontSize: "12px", color: "#059669", fontWeight: 600, marginBottom: "3px" }}>
