@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Filter, Search, AlertCircle } from "lucide-react";
 import ClinicCard from "@/components/ClinicCard";
@@ -52,19 +52,19 @@ function MapContent() {
     loadClinics();
   }, [filter, rawLocalClinics.length]);
 
-  const handleClinicsFetched = (fetchedClinics: Clinic[]) => {
+  const handleClinicsFetched = useCallback((fetchedClinics: Clinic[]) => {
     setRawLocalClinics(fetchedClinics);
     setIsLoading(false);
-  };
+  }, []);
 
-  const handleClinicDetailsUpdated = (updatedClinic: Clinic) => {
+  const handleClinicDetailsUpdated = useCallback((updatedClinic: Clinic) => {
     setRawLocalClinics((prev) =>
       prev.map((c) => (c.id === updatedClinic.id ? updatedClinic : c))
     );
     setClinics((prev) =>
       prev.map((c) => (c.id === updatedClinic.id ? updatedClinic : c))
     );
-  };
+  }, []);
 
   const filteredLocal = rawLocalClinics.filter(c => 
     !filter || 

@@ -91,11 +91,11 @@ const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelecte
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden pt-5 mt-5 space-y-4 relative z-10 border-t border-outline-variant/10"
           >
-            <div className="flex items-start gap-3 text-sm">
-              <Mail className="h-4 w-4 text-emerald mt-0.5" />
-              <div className="leading-tight">
-                <div className="font-heading font-bold text-[9px] text-on-surface-variant uppercase tracking-[0.1em] mb-1">Email</div>
-                {clinic.email ? (
+            {clinic.email && (
+              <div className="flex items-start gap-3 text-sm">
+                <Mail className="h-4 w-4 text-emerald mt-0.5" />
+                <div className="leading-tight">
+                  <div className="font-heading font-bold text-[9px] text-on-surface-variant uppercase tracking-[0.1em] mb-1">Email</div>
                   <a
                     href={`mailto:${clinic.email}`}
                     onClick={(e) => e.stopPropagation()}
@@ -103,11 +103,9 @@ const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelecte
                   >
                     {clinic.email}
                   </a>
-                ) : (
-                  <span className="text-outline italic text-xs">Not available</span>
-                )}
+                </div>
               </div>
-            </div>
+            )}
             {clinic.website && (
               <div className="flex items-start gap-3 text-sm">
                 <Globe className="h-4 w-4 text-emerald mt-0.5" />
@@ -131,13 +129,17 @@ const ClinicCard = ({ clinic, isSelected, onClick }: { clinic: Clinic, isSelecte
               <div className="leading-tight">
                 <div className="font-heading font-bold text-[9px] text-on-surface-variant uppercase tracking-[0.1em] mb-1">Phone</div>
                 {clinic.phone ? (
-                  <a
-                    href={`tel:${clinic.phone}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-foreground hover:text-emerald transition-colors font-body text-xs"
-                  >
-                    {clinic.phone}
-                  </a>
+                  clinic.phone === "Loading..." ? (
+                    <span className="text-outline italic text-xs animate-pulse">Select card to view phone</span>
+                  ) : (
+                    <a
+                      href={`tel:${clinic.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-foreground hover:text-emerald transition-colors font-body text-xs"
+                    >
+                      {clinic.phone}
+                    </a>
+                  )
                 ) : (
                   <span className="text-outline italic text-xs">Not available</span>
                 )}

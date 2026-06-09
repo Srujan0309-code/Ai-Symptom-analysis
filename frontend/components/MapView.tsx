@@ -91,7 +91,7 @@ export default function MapView({
         mapRef.current?.panTo({ lat: found.lat, lng: found.lng });
 
         // Fetch real details if the clinic phone is the default/fake placeholder
-        if (found.phone === "+91 999 888 7777" && mapRef.current) {
+        if ((found.phone === "+91 999 888 7777" || found.phone === "Loading...") && mapRef.current) {
           try {
             const service = new google.maps.places.PlacesService(mapRef.current);
             service.getDetails(
@@ -103,11 +103,18 @@ export default function MapView({
                 if (status === google.maps.places.PlacesServiceStatus.OK && place) {
                   const updated: Clinic = {
                     ...found,
-                    phone: place.formatted_phone_number || found.phone,
+                    phone: place.formatted_phone_number || "Not available",
                     website: place.website || undefined,
                     opening_hours: place.opening_hours?.weekday_text
                       ? place.opening_hours.weekday_text.join(" | ")
                       : found.opening_hours,
+                  };
+                  setSelectedInfo(updated);
+                  onClinicDetailsUpdated?.(updated);
+                } else {
+                  const updated: Clinic = {
+                    ...found,
+                    phone: "Not available",
                   };
                   setSelectedInfo(updated);
                   onClinicDetailsUpdated?.(updated);
@@ -172,7 +179,7 @@ export default function MapView({
                 lng: clinicLng,
                 address: p.vicinity || "Nearby",
                 rating: p.rating || +(4.0 + Math.random() * 0.9).toFixed(1),
-                phone: "+91 999 888 7777",
+                phone: "Loading...",
                 wait_time_minutes: Math.floor(Math.random() * 35) + 5,
                 isOpen: p.opening_hours?.isOpen?.() ?? true,
                 opening_hours: p.opening_hours?.isOpen?.() ? "Open Now" : "Closed",
