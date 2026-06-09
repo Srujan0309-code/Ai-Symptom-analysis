@@ -238,4 +238,6 @@ Respond ONLY with a valid JSON object:
   }
 });
 
+router.extractPdfText = extractPdfText;
+router.extractImageText = extractImageText;
 module.exports = router;

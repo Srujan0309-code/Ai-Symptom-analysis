@@ -61,7 +61,7 @@ async function fetchDiseaseData(symptomKeyword) {
   }
 }
 
-const analyzeSymptoms = async (symptoms, language = 'en', imageBase64 = null) => {
+const analyzeSymptoms = async (symptoms, language = 'en', imageBase64 = null, reportText = null) => {
   const languageContext = language === 'hi'
     ? 'The advice and category fields should be in Hindi. Keep JSON keys in English.'
     : 'All content must be in English.';
@@ -148,7 +148,7 @@ Respond ONLY with a valid JSON object in this EXACT format:
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Patient-reported symptoms: "${symptoms}"${visualContext}\n\nPlease perform a comprehensive clinical triage analysis taking all inputs into account.` },
+        { role: 'user', content: `Patient-reported symptoms: "${symptoms}"${visualContext}${reportText ? `\n\nUploaded Clinical Report Text Content:\n${reportText}` : ''}\n\nPlease perform a comprehensive clinical triage analysis taking all inputs into account.` },
       ],
       model: 'llama-3.3-70b-versatile',
       temperature: 0.15,

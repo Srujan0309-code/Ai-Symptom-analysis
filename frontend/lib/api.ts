@@ -12,12 +12,26 @@ const getAuthHeaders = async (baseHeaders: Record<string, string> = {}) => {
   return headers;
 };
 
-export const analyzeSymptoms = async (symptoms: string, userId?: string, language: string = 'en', imageBase64?: string) => {
-  const headers = await getAuthHeaders({ 'Content-Type': 'application/json' });
+export const analyzeSymptoms = async (symptoms: string, userId?: string, language: string = 'en', imageBase64?: string, reportFile?: File) => {
+  const headers = await getAuthHeaders();
+  let body: BodyInit;
+  
+  if (reportFile) {
+    const formData = new FormData();
+    formData.append('report', reportFile);
+    formData.append('symptoms', symptoms);
+    formData.append('language', language);
+    if (imageBase64) formData.append('imageBase64', imageBase64);
+    body = formData;
+  } else {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify({ symptoms, language, imageBase64 });
+  }
+
   const response = await fetch(`${BACKEND_URL}/analyze`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ symptoms, language, imageBase64 }),
+    body,
   });
   if (!response.ok) throw new Error('Analysis failed');
   return response.json();

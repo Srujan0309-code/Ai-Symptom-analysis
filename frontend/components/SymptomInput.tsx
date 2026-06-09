@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Mic, RotateCcw, Sparkles, Camera, X } from "lucide-react";
+import { Mic, RotateCcw, Sparkles, Camera, X, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSpeech } from "@/hooks/useSpeech";
 
 interface SymptomInputProps {
-  onAnalyze: (symptoms: string, imageBase64?: string) => void;
+  onAnalyze: (symptoms: string, imageBase64?: string, reportFile?: File) => void;
   isLoading: boolean;
 }
 
 const SymptomInput = ({ onAnalyze, isLoading }: SymptomInputProps) => {
   const [value, setValue] = useState("");
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [reportFile, setReportFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const reportInputRef = useRef<HTMLInputElement>(null);
   const { isListening, transcript, startListening, stopListening } = useSpeech();
 
   useEffect(() => {
@@ -24,8 +26,8 @@ const SymptomInput = ({ onAnalyze, isLoading }: SymptomInputProps) => {
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (value.trim() || imageBase64) {
-      onAnalyze(value, imageBase64 || undefined);
+    if (value.trim() || imageBase64 || reportFile) {
+      onAnalyze(value, imageBase64 || undefined, reportFile || undefined);
     }
   };
 
@@ -78,6 +80,29 @@ const SymptomInput = ({ onAnalyze, isLoading }: SymptomInputProps) => {
                 </div>
               </motion.div>
             )}
+            {reportFile && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0, scale: 0.9 }}
+                animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                exit={{ opacity: 0, height: 0, scale: 0.9 }}
+                className="px-8 pb-4 relative z-10"
+              >
+                <div className="relative inline-flex items-center gap-3 p-3 bg-lavender/5 border border-lavender/20 rounded-2xl">
+                  <FileText className="h-6 w-6 text-lavender" />
+                  <div className="text-left">
+                    <p className="text-xs font-heading font-bold text-foreground line-clamp-1">{reportFile.name}</p>
+                    <p className="text-[10px] text-on-surface-variant font-body">{(reportFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReportFile(null)}
+                    className="bg-error text-white rounded-full p-1 hover:bg-error/80 transition-colors shadow-md ml-2"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
           
           <input
@@ -86,6 +111,14 @@ const SymptomInput = ({ onAnalyze, isLoading }: SymptomInputProps) => {
             capture="environment"
             ref={fileInputRef}
             onChange={handleImageChange}
+            className="hidden"
+          />
+
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.webp,.txt"
+            ref={reportInputRef}
+            onChange={(e) => { if (e.target.files?.[0]) setReportFile(e.target.files[0]); }}
             className="hidden"
           />
 
@@ -130,7 +163,17 @@ const SymptomInput = ({ onAnalyze, isLoading }: SymptomInputProps) => {
 
               <button
                 type="button"
-                onClick={() => { setValue(""); setImageBase64(null); }}
+                onClick={() => reportInputRef.current?.click()}
+                className="relative flex items-center gap-3 px-6 py-3 rounded-full font-heading font-bold text-sm transition-all active:scale-95 bg-surface-container text-on-surface-variant hover:text-foreground hover:bg-lavender/10"
+                title="Add Report"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Report</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setValue(""); setImageBase64(null); setReportFile(null); }}
                 className="p-3 rounded-full hover:bg-surface-container transition-all text-outline hover:text-foreground"
                 title="Reset"
               >
@@ -140,7 +183,7 @@ const SymptomInput = ({ onAnalyze, isLoading }: SymptomInputProps) => {
 
             <button
               type="submit"
-              disabled={isLoading || (!value.trim() && !imageBase64)}
+              disabled={isLoading || (!value.trim() && !imageBase64 && !reportFile)}
               className="w-full sm:w-auto btn-pill btn-secondary flex items-center justify-center gap-2 font-heading font-bold disabled:opacity-30 disabled:grayscale transition-all hover:shadow-[0_0_20px_rgba(107,56,212,0.2)]"
             >
               {isLoading ? (

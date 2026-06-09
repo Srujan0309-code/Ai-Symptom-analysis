@@ -3,8 +3,16 @@ const router = express.Router();
 const { analyzeSymptoms } = require('../services/aiService');
 const { saveSymptomLog } = require('../services/supabaseService');
 const authMiddleware = require('../middleware/authMiddleware');
+const multer = require('multer');
 
-router.post('/', authMiddleware, async (req, res) => {
+// Configure multer for optional report upload
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024 } // 15MB max
+});
+
+router.post('/', authMiddleware, upload.single('report'), async (req, res) => {
   const { symptoms, language, imageBase64, doctorChat, doctorName, doctorSpecialty, conversationHistory } = req.body;
   const userId = req.user?.uid || 'anonymous';
 
@@ -14,7 +22,16 @@ router.post('/', authMiddleware, async (req, res) => {
       const Groq = require('groq-sdk');
       const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-      const history = (conversationHistory || []).slice(-6).map(m => ({
+      let parsedHistory = conversationHistory || [];
+      if (typeof parsedHistory === 'string') {
+        try {
+          parsedHistory = JSON.parse(parsedHistory);
+        } catch {
+          parsedHistory = [];
+        }
+      }
+
+      const history = parsedHistory.slice(-6).map(m => ({
         role: m.role,
         content: m.content,
       }));
@@ -48,21 +65,43 @@ Never prescribe specific medication dosages.`,
   }
 
   // ── Normal Symptom Analysis Mode ─────────────────────────────────────────
-  console.log('[ANALYZE] Request received:', { symptoms: symptoms?.substring(0, 50), userId, language, hasImage: !!imageBase64 });
+  console.log('[ANALYZE] Request received:', { symptoms: symptoms?.substring(0, 50), userId, language, hasImage: !!imageBase64, hasFile: !!req.file });
 
-  if (!symptoms) {
-    return res.status(400).json({ error: 'Symptoms are required' });
+  if (!symptoms && !req.file) {
+    return res.status(400).json({ error: 'Symptoms or a report file is required' });
   }
 
   try {
-    const analysis = await analyzeSymptoms(symptoms, language, imageBase64);
+    let extractedReportText = '';
+    if (req.file) {
+      const { mimetype, originalname, buffer } = req.file;
+      const reportRouter = require('./reports');
+      
+      if (mimetype === 'text/plain') {
+        extractedReportText = buffer.toString('utf-8').substring(0, 12000);
+      } else if (mimetype === 'application/pdf') {
+        const pdfText = await reportRouter.extractPdfText(buffer);
+        if (pdfText && pdfText.length > 50) {
+          extractedReportText = pdfText;
+        } else {
+          const ocrText = await reportRouter.extractImageText(buffer, 'image/jpeg', '');
+          extractedReportText = ocrText || '';
+        }
+      } else if (mimetype.startsWith('image/')) {
+        const ocrText = await reportRouter.extractImageText(buffer, mimetype, '');
+        extractedReportText = ocrText || '';
+      }
+      console.log(`[ANALYZE] Extracted report text length: ${extractedReportText.length} (${originalname})`);
+    }
+
+    const analysis = await analyzeSymptoms(symptoms || 'Uploaded report analysis request', language, imageBase64, extractedReportText);
     console.log('[ANALYZE] Success:', { urgency: analysis.urgency, category: analysis.category });
     
     // Save to history asynchronously (don't block response)
     try {
       saveSymptomLog({
         user_id: userId,
-        symptoms,
+        symptoms: symptoms || `Uploaded Report: ${req.file?.originalname || 'Document'}`,
         result: analysis,
         urgency: analysis.urgency,
         language: language || 'en'
